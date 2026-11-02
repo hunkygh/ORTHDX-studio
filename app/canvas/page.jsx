@@ -2,6 +2,27 @@
 import {useState,useEffect,useMemo,useRef} from 'react';
 const blank={nodes:[],edges:[],months:12};
 const types=['Product','Sales rep','Revenue pool','Allocation','Expense','Profit'];
+const sampleGraph={months:12,nodes:[
+{id:'p-web',type:'Product',name:'Websites',x:35,y:35,price:1500,units:5,growth:4},
+{id:'p-ai',type:'Product',name:'AI automations',x:35,y:205,price:3000,units:3,growth:6},
+{id:'p-crm',type:'Product',name:'CRM systems',x:35,y:375,price:2500,units:2,growth:5},
+{id:'rep-1',type:'Sales rep',name:'Rep A — websites',x:335,y:35,quota:7500,attainment:100},
+{id:'rep-2',type:'Sales rep',name:'Rep B — AI',x:335,y:205,quota:9000,attainment:100},
+{id:'rep-3',type:'Sales rep',name:'Rep C — CRM',x:335,y:375,quota:5000,attainment:100},
+{id:'pool',type:'Revenue pool',name:'Gross revenue',x:635,y:205},
+{id:'rep-pay',type:'Allocation',name:'Sales commissions',x:940,y:25,percent:60},
+{id:'matt',type:'Allocation',name:'Matt override',x:940,y:165,percent:12},
+{id:'mgmt',type:'Allocation',name:'Management fund',x:940,y:305,percent:3},
+{id:'retained',type:'Allocation',name:'ORTHDX retained',x:940,y:445,percent:25},
+{id:'cost',type:'Expense',name:'Operating expenses',x:1230,y:335,percent:0,fixed:1000},
+{id:'profit',type:'Profit',name:'Net profit',x:1230,y:505}
+],edges:[
+{from:'p-web',to:'rep-1'},{from:'p-ai',to:'rep-2'},{from:'p-crm',to:'rep-3'},
+{from:'rep-1',to:'pool'},{from:'rep-2',to:'pool'},{from:'rep-3',to:'pool'},
+{from:'pool',to:'rep-pay'},{from:'pool',to:'matt'},{from:'pool',to:'mgmt'},{from:'pool',to:'retained'},
+{from:'retained',to:'profit'},{from:'cost',to:'profit'}
+]};
+
 const money=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(Number.isFinite(n)?n:0);
 const id=()=>Math.random().toString(36).slice(2,10);
 const box={width:210,height:116};
@@ -38,7 +59,7 @@ export default function Canvas(){
  return <main style={{minHeight:'100vh',background:'#e8e9df',color:'#20241d',fontFamily:'Arial, sans-serif',padding:'24px clamp(12px,3vw,45px)'}}>
  <header style={{display:'flex',justifyContent:'space-between',flexWrap:'wrap',gap:12,borderBottom:'1px solid #a3a69a',paddingBottom:18}}><strong>ORTHDX <span style={{fontWeight:400}}>/ FINANCIAL CANVAS</span></strong><nav style={{display:'flex',gap:20}}><a href="/flow" style={{color:'inherit'}}>Flow atlas</a><a href="/" style={{color:'inherit'}}>Forecasts</a></nav></header>
  <h1 style={{fontSize:'clamp(38px,6vw,76px)',letterSpacing:'-.06em',margin:'30px 0 8px'}}>Map the money<span style={{color:'#7fa84d'}}>.</span></h1><p style={{marginTop:0,maxWidth:720}}>Create products, reps, and financial destinations. Drag nodes, connect their ports, then move through time. All values are hypothetical and stored in this browser.</p>
- <div style={{display:'flex',flexWrap:'wrap',gap:8,margin:'25px 0'}}>{types.map(t=><button key={t} style={button} onClick={()=>add(t)}>+ {t}</button>)}</div>
+ <div style={{display:'flex',flexWrap:'wrap',gap:8,margin:'25px 0'}}><button style={{...button,background:'#26382a',color:'#fff'}} onClick={()=>{if(graph.nodes.length&&!window.confirm('Replace the current canvas with the ORTHDX sample?'))return;setGraph(structuredClone(sampleGraph));setSelected(null);setConnect(null);setMonth(1);setNotice('Sample loaded: 3 products, 3 reps, revenue pool, allocations, costs and profit. Illustrative assumptions only.')}}>Load ORTHDX sample</button>{types.map(t=><button key={t} style={button} onClick={()=>add(t)}>+ {t}</button>)}</div>
  <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) minmax(240px,290px)',gap:14,alignItems:'start'}}>
  <section style={{...card,padding:12,overflow:'hidden'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:10,padding:'8px 9px 16px',fontSize:12}}><b>01 / NETWORK</b><span>{connect?'Connecting from '+(graph.nodes.find(n=>n.id===connect)?.name||'node')+' — tap + on destination':'Drag nodes · arrow = source · + = destination'}</span><div style={{display:'flex',gap:6,alignItems:'center'}}><button type="button" onClick={()=>setZoom(z=>Math.max(.4,Math.round((z-.2)*10)/10))} aria-label="Zoom out" style={button}>−</button><span style={{minWidth:48,textAlign:'center'}}>{Math.round(zoom*100)}%</span><button type="button" onClick={()=>setZoom(z=>Math.min(2,Math.round((z+.2)*10)/10))} aria-label="Zoom in" style={button}>+</button><button type="button" onClick={()=>setZoom(1)} style={button}>Reset</button></div></div>{notice&&<p role="status" style={{fontSize:12,padding:'0 10px',color:'#45632e'}}>{notice}</p>}
  <div ref={stage} onPointerMove={onMove} onPointerUp={()=>setDrag(null)} onPointerCancel={()=>setDrag(null)} onWheel={e=>{if(e.ctrlKey||e.metaKey){e.preventDefault();setZoom(z=>Math.max(.4,Math.min(2,Math.round((z+(e.deltaY<0?.1:-.1))*10)/10)))}}} onKeyDown={e=>{if(e.key==='Escape'){setConnect(null);setNotice('Connection canceled.')}}} tabIndex={0} style={{overflow:'auto',height:550,backgroundColor:'#fdfdf7',backgroundImage:'radial-gradient(#d2d5c8 1px,transparent 1px)',backgroundSize:'22px 22px',borderRadius:8,touchAction:'pan-x pan-y'}}>
